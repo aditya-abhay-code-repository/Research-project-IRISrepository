@@ -1,0 +1,77 @@
+import random
+import sys
+import time
+
+EXPECTED_BIT_LENGTH = 2048
+MILLER_RABIN_ROUNDS = 40
+
+def is_prime(n: int, k: int) -> bool:
+    if n < 2: return False
+    if n == 2 or n == 3: return True
+    if n % 2 == 0: return False
+    s, d = 0, n - 1
+    while d % 2 == 0:
+        d //= 2
+        s += 1
+    for i in range(k):
+        progress = (i + 1) / k
+        sys.stdout.write(f"\r  > Primality check progress: [{int(progress * 100):>3}%]")
+        sys.stdout.flush()
+        a = random.randint(2, n - 2)
+        x = pow(a, d, n)
+        if x == 1 or x == n - 1:
+            continue
+        is_composite = True
+        for _ in range(s - 1):
+            x = pow(x, 2, n)
+            if x == n - 1:
+                is_composite = False
+                break
+        if is_composite:
+            sys.stdout.write("\n")
+            return False
+    sys.stdout.write("\n")
+    return True
+
+if __name__ == "__main__":
+    print("--- Interactive Prime Verification Utility ---")
+    print(f"This tool will verify if a number is a valid {EXPECTED_BIT_LENGTH}-bit prime.")
+    print("\nPlease paste the large prime number below and press Enter.")
+    try:
+        p_str = input("> ")
+        print("\nAttempting to convert input to an integer...")
+        p = int(p_str.strip())
+        print("Successfully read and converted the number.")
+    except ValueError:
+        print("\n[FATAL ERROR] Invalid input.")
+        print("The text you pasted is not a valid integer. Please try again.")
+        sys.exit(1)
+    except KeyboardInterrupt:
+        print("\n\nOperation cancelled by user. Exiting.")
+        sys.exit(0)
+    print("\nStarting verification checks...\n")
+    all_checks_passed = True
+    start_time = time.time()
+    actual_bits = p.bit_length()
+    print(f"Checking Bit Length...")
+    if actual_bits == EXPECTED_BIT_LENGTH:
+        print(f"  > Result: {actual_bits} bits. [PASS]")
+    else:
+        print(f"  > Result: {actual_bits} bits. [FAIL] - Expected {EXPECTED_BIT_LENGTH} bits.")
+        all_checks_passed = False
+    print(f"\nChecking Primality (using {MILLER_RABIN_ROUNDS} rounds)...")
+    is_p_prime = is_prime(p, MILLER_RABIN_ROUNDS)
+    if is_p_prime:
+        print(f"  > Result: Number is probably prime. [PASS]")
+    else:
+        print(f"  > Result: Number is composite. [FAIL]")
+        all_checks_passed = False
+    end_time = time.time()
+    total_time = end_time - start_time
+    print(f"\nVerification completed in {total_time:.2f} seconds.")
+    print("\n" + "="*30)
+    if all_checks_passed:
+        print("VERDICT: The number is a valid 2048-bit prime.")
+    else:
+        print("VERDICT: The number FAILED verification.")
+    print("="*30)
