@@ -1,0 +1,21 @@
+import matplotlib.pyplot as plt
+
+categories = ['Observed Entropy\n(96 constants)', 'Theoretical Maximum\n(log₂ 96)']
+values = [6.58, 6.58]
+colors = ['#5470C6', '#91CC75']
+
+plt.figure(figsize=(10, 6))
+bars = plt.bar(categories, values, color=colors, edgecolor='black', linewidth=1.5)
+plt.ylabel('Shannon Entropy (bits)', fontsize=12)
+plt.title('Shannon Entropy of Fertile Constant Distribution', fontsize=14, fontweight='bold')
+plt.ylim(0, 7.5)
+plt.axhline(y=6.58, color='gray', linestyle='--', linewidth=1, label='Maximum entropy')
+
+for bar, val in zip(bars, values):
+    plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.1, 
+             f'{val:.2f}', ha='center', fontsize=12, fontweight='bold')
+
+plt.grid(axis='y', alpha=0.3)
+plt.tight_layout()
+plt.savefig('entropy_comparison_correct.png', dpi=300, bbox_inches='tight')
+plt.show()
