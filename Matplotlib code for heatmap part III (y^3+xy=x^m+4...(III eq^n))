@@ -1,0 +1,89 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
+
+def generate_residual_heatmap(x_range, y_range, m_min, m_max_test):
+    """
+    Generates a heatmap of the minimum residuals for the equation y^3 + xy = x^m + 4.
+
+    For each (x, y) pixel, it calculates min_{m}|y^3 + xy - x^m - 4|
+    for m in [m_min, m_max_test].
+
+    Args:
+        x_range (tuple): The (min, max) range for the x-axis.
+        y_range (tuple): The (min, max) range for the y-axis.
+        m_min (int): The minimum value of m to test (e.g., 6).
+        m_max_test (int): The maximum value of m to test for visualization.
+    """
+    x_values = np.arange(x_range[0], x_range[1] + 1)
+    y_values = np.arange(y_range[0], y_range[1] + 1)
+    
+    min_residuals = np.full((len(y_values), len(x_values)), np.inf, dtype=np.float64)
+    
+    m_values_to_test = range(m_min, m_max_test + 1)
+
+    print(f"Generating heatmap for (x,y) in [{x_range[0]},{x_range[1]}] x [{y_range[0]},{y_range[1]}]")
+    print(f"Testing m values from {m_min} to {m_max_test} for each point.")
+
+    for i, x in enumerate(x_values):
+        for j, y in enumerate(y_values):
+            
+            # Calculate the fixed part of the equation
+            try:
+                y_part = y**3 + x * y - 4
+            except OverflowError:
+                continue
+
+            # Find the minimum residual for this (x, y) across all testable m
+            current_min_res = np.inf
+            
+            for m in m_values_to_test:
+                try:
+                    # x^m can overflow, so we use a try-except block
+                    residual = abs(y_part - x**m)
+                    if residual < current_min_res:
+                        current_min_res = residual
+                except OverflowError:
+                    # If x^m overflows, the residual is effectively infinite.
+                    # No need to test larger m's for this x, as they will also overflow.
+                    break 
+            
+            min_residuals[j, i] = current_min_res
+
+    
+    plt.style.use('dark_background')
+    fig, ax = plt.subplots(figsize=(14, 12))
+
+    im = ax.imshow(min_residuals + 1, cmap='inferno', origin='lower',
+                   norm=LogNorm(), 
+                   extent=[x_range[0], x_range[1], y_range[0], y_range[1]])
+
+    
+    ax.set_title(f"Minimum Residual Heatmap for $y^3 + xy = x^m + 4$  (for $m \\geq {m_min}$)", fontsize=18)
+    ax.set_xlabel("Integer x", fontsize=14)
+    ax.set_ylabel("Integer y", fontsize=14)
+    ax.axhline(0, color='gray', linestyle='--', alpha=0.5) 
+    ax.axvline(0, color='gray', linestyle='--', alpha=0.5) 
+    cbar = fig.colorbar(im)
+    cbar.set_label('min$_m |y^3 + xy - x^m - 4| + 1$ (Log Scale)', fontsize=14)
+    
+    ax.text(0.05, 0.95, 'No (x, y) point achieves a zero residual,\nproviding visual evidence of non-existence.',
+            transform=ax.transAxes, fontsize=12, color='cyan',
+            verticalalignment='top', bbox=dict(boxstyle='round,pad=0.5', fc='black', ec='cyan', lw=1))
+
+    print("\nPlot generation complete.")
+    plt.show()
+\end{lstlisting}
+\end{figure}
+\begin{figure}[H]
+\begin{lstlisting}   
+if __name__ == '__main__':
+   
+    VISUAL_X_RANGE = (-100, 100)
+    VISUAL_Y_RANGE = (-100, 100)
+
+    M_MINIMUM = 6
+   
+    M_MAX_TO_TEST = 20 
+    
+    generate_residual_heatmap(VISUAL_X_RANGE, VISUAL_Y_RANGE, M_MINIMUM, M_MAX_TO_TEST)
