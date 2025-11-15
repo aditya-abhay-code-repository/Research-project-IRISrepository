@@ -1,0 +1,39 @@
+import time
+from tabulate import tabulate
+def find_integer_exponent(base, result):
+    """
+    Determines if result = base^m for some integer m.
+    Returns m if it exists, None otherwise.
+    """
+    if base == 0:
+        return 0 if result == 0 else None
+    if base == 1:
+        return 1 if result == 1 else None
+    if base == -1:
+        if result == 1: return 2
+        if result == -1: return 1
+        return None
+    
+    if result <= 0 and base > 0:
+        return None
+    
+    if result == 1: 
+        return 0
+
+    power = 0
+    temp_val = result
+    
+    # Check divisibility
+    if temp_val % base != 0:
+        return None
+    
+    while temp_val % base == 0:
+        if temp_val == 0: return None 
+        temp_val //= base
+        power += 1
+    
+    # Verify complete factorization
+    if temp_val == 1 and power > 0:
+        return power
+    
+    return None
