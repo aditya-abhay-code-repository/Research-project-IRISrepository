@@ -1,0 +1,43 @@
+import math
+from collections import Counter
+
+fertile_constants = [-16, -15, -13, -12, -11, -8, -7, -5, -4, -3, -1, 
+                     0, 1, 5, 8, 9, 17, 23, 27, 29, 40, 56, 59, 64, 67, 
+                     99, 101, 115, 117, 119, 125, 127, 128, 129, 149, 
+                     153, 188, 209, 212, 216, 217, 221, 224, 241, 245, 
+                     269, 283, 288, 313, 325, 335, 341, 343, 349, 360, 
+                     407, 412, 425, 428, 437, 441, 455, 469, 480, 503, 
+                     504, 509, 512, 519, 583, 621, 651, 675, 681, 695, 
+                     704, 709, 719, 729, 731, 737, 761, 784, 823, 827, 
+                     868, 869, 880, 889, 915, 949, 953, 964, 979, 989, 
+                     1000]
+
+n = len(fertile_constants)
+entropy_uniform = -sum((1/n) * math.log2(1/n) for _ in range(n))
+print(f"Shannon entropy (uniform assumption): {entropy_uniform:.2f} bits")
+print(f"Theoretical maximum: {math.log2(n):.2f} bits")
+
+range_min, range_max = -1000, 1000
+num_bins = 20
+bin_width = (range_max - range_min) / num_bins
+
+bins = [0] * num_bins
+for c in fertile_constants:
+    bin_idx = int((c - range_min) / bin_width)
+    if bin_idx >= num_bins:
+        bin_idx = num_bins - 1
+    bins[bin_idx] += 1
+
+expected = n / num_bins
+chi_square = sum((obs - expected)**2 / expected for obs in bins)
+
+print(f"\nChi-square test:")
+print(f"Test statistic: {chi_square:.2f}")
+print(f"Degrees of freedom: {num_bins - 1}")
+print(f"Observed counts per bin: {bins}")
+print(f"Expected per bin (uniform): {expected:.2f}")
+
+if chi_square < 30.14:
+    print("Result: Fail to reject uniformity (data consistent with uniform)")
+else:
+    print("Result: Reject uniformity (data shows significant clustering)")
