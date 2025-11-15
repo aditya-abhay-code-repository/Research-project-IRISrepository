@@ -1,0 +1,50 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
+
+def generate_residual_heatmap(x_range, y_range, n_min, n_max):
+   
+    grid_size_x = 2 * x_range + 1
+    grid_size_y = 2 * y_range + 1
+    
+    min_residuals = np.full((grid_size_y, grid_size_x), np.inf, dtype=np.float64)
+    
+    n_values = [n for n in range(n_min, n_max + 1) if n % 2 != 0]
+    print(f"Generating heatmap for x,y in [-{x_range}, {x_range}]...")
+    
+    for i, x in enumerate(range(-x_range, x_range + 1)):
+        for j, y in enumerate(range(-y_range, y_range + 1)):
+            if y == 0:
+                rhs = x**4 + 4
+                min_res_for_point = abs(0 - rhs)
+            else:
+                rhs = x**4 - x * y + 4
+                
+                lhs_values = np.power(np.full(len(n_values), y, dtype=np.float64), n_values)
+                residuals = np.abs(lhs_values - rhs)
+                min_res_for_point = np.min(residuals)
+            min_residuals[j, i] = min_res_for_point
+    
+    plt.style.use('dark_background')
+    fig, ax = plt.subplots(figsize=(14, 12))
+    
+    im = ax.imshow(min_residuals + 1, cmap='inferno', origin='lower',
+                   norm=LogNorm(), 
+                   extent=[-x_range, x_range, -y_range, y_range])
+    
+    ax.set_title(f"Minimum Residual Heatmap for $y^n + xy = x^4 + 4$", fontsize=18)
+    ax.set_xlabel("Integer x", fontsize=14)
+    ax.set_ylabel("Integer y", fontsize=14)
+ 
+    cbar = fig.colorbar(im)
+    cbar.set_label('min_n  $|y^n + xy - x^4 - 4| + 1$ (Log Scale)', fontsize=14)
+    
+    print("Plot generated. Note the lack of a 'zero' value.")
+    plt.show()
+
+if __name__ == '__main__':
+    VISUAL_RANGE = 100 
+    N_MIN_VISUAL = 5
+    N_MAX_VISUAL = 99
+    
+    generate_residual_heatmap(VISUAL_RANGE, VISUAL_RANGE, N_MIN_VISUAL, N_MAX_VISUAL)
