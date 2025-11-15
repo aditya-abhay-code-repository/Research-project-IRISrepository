@@ -1,0 +1,27 @@
+
+import time
+fertile_constants = [-16, -15, -13, -12, -11, -8, -7, -5, -4, -3, -1, 0, 1, 5, 8, 9, 17, 23, 27, 29, 40, 56, 59, 64, 67, 99, 101, 115, 117, 119, 125, 127, 128, 129, 149, 153, 188, 209, 212, 216, 217, 221, 224, 241, 245, 269, 283, 288, 313, 325, 335, 341, 343, 349, 360, 407, 412, 425, 428, 437, 441, 455, 469, 480, 503, 504, 509, 512, 519, 583, 621, 651, 675, 681, 695, 704, 709, 719, 729, 731, 737, 761, 784, 823, 827, 868, 869, 880, 889, 915, 949, 953, 964, 979, 989, 1000]
+def brute_force_solution(c, xr, yr):
+    for x in range(-xr, xr+1):
+        rhs = x**4 + c
+        for y in range(-yr, yr+1):
+            if y**3 + x*y == rhs:
+                return (x,y)
+    return None
+
+if __name__ == "__main__":
+    xr = 100
+    yr = 100
+    results = {}
+    total_time = 0.0
+    for c in fertile_constants:
+        start = time.time()
+        sol = brute_force_solution(c, xr, yr)
+        elapsed = time.time() - start
+        total_time += elapsed
+        results[c] = (sol, elapsed)
+    successful = sum(1 for v in results.values() if v[0] is not None)
+    print(f"Trapdoor verification: {successful}/{len(fertile_constants)} found within bounds")
+    for c, (sol, t) in sorted(results.items()):
+        print(f"c={c}: solution={sol} time_ms={t*1000:.2f}")
+    print(f"Average time per constant: {total_time/len(fertile_constants)*1000:.2f} ms")
