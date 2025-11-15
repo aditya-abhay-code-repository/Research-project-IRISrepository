@@ -1,0 +1,101 @@
+import random
+import time
+import sys
+BIT_LENGTH = 2048
+MILLER_RABIN_ROUNDS = 40  
+
+
+def is_prime(n: int, k: int) -> bool:
+    if n < 2: return False
+    if n == 2 or n == 3: return True
+    if n % 2 == 0: return False
+
+    s, d = 0, n - 1
+    while d % 2 == 0:
+        d //= 2
+        s += 1
+    
+    for _ in range(k):
+        a = random.randint(2, n - 2)
+        x = pow(a, d, n)
+
+        if x == 1 or x == n - 1:
+            continue
+
+        is_composite = True
+        for _ in range(s - 1):
+            x = pow(x, 2, n)
+            if x == n - 1:
+                is_composite = False
+                break
+        
+        if is_composite:
+            return False
+    return True
+
+
+def format_time(seconds: float) -> str:
+    mins, secs = divmod(int(seconds), 60)
+    return f"{mins:02d}m {secs:02d}s"
+
+
+def generate_prime_with_progress(bit_length: int) -> int:
+    print("--- 2048-bit Prime Search Initiated ---")
+    print("WARNING: This will take a long time. Press Ctrl+C to abort.")
+    
+    attempts = 0
+    start_time = time.time()
+    spinner_chars = ['|', '/', '-', '\\']
+    
+    while True:
+        attempts += 1
+        elapsed_time = time.time() - start_time
+        spinner_char = spinner_chars[attempts % len(spinner_chars)]
+        speed = attempts / elapsed_time if elapsed_time > 0 else 0
+        display_line = (
+            f"[{spinner_char}] Searching... "
+            f"[Attempts: {attempts:,}] "
+            f"[Time: {format_time(elapsed_time)}] "
+            f"[Speed: {speed:.1f}/sec]"
+        )
+        sys.stdout.write(display_line + '\r')
+        sys.stdout.flush()
+
+        p = random.getrandbits(bit_length)
+        p |= (1 << (bit_length - 1)) 
+        p |= 1  
+
+        if is_prime(p, MILLER_RABIN_ROUNDS):
+            print() 
+            print(f"\n--- SUCCESS! ---")
+            print(f"Found a 2048-bit prime after {attempts:,} attempts.")
+            return p
+
+def save_prime_to_file(prime: int, filename: str):
+    try:
+        with open(filename, 'w') as f:
+            f.write(str(prime))
+        print(f"\nSuccessfully saved the prime to '{filename}'.")
+    except IOError as e:
+        print(f"\nError: Could not save prime to file. {e}")
+
+if __name__ == "__main__":
+    
+    prime_filename = "prime_2048_bit.txt"
+    
+    try:
+        found_prime = generate_prime_with_progress(BIT_LENGTH)
+        end_time = time.time()
+        print("\n" + "="*60)
+        print("--- 2048-bit Prime Generation Complete ---")
+        
+        print(f"\nBit Length: {found_prime.bit_length()} bits")
+        print(f"Number of Decimal Digits: {len(str(found_prime))}")
+        print("\nGenerated 2048-bit Prime (p):")
+        print(found_prime)
+        print("="*60)
+        save_prime_to_file(found_prime, prime_filename)
+
+    except KeyboardInterrupt:
+        print("\n\n--- Search Aborted by User ---")
+        sys.exit(0)
