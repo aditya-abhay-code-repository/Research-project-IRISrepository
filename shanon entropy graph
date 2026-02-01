@@ -1,21 +1,101 @@
+import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
+import scipy.stats as stats
+import math
 
-categories = ['Observed Entropy\n(96 constants)', 'Theoretical Maximum\n(log₂ 96)']
-values = [6.58, 6.58]
-colors = ['#5470C6', '#91CC75']
+def analyze_aads_randomness(csv_file_path):
+    """
+    Performs rigorous statistical analysis on AADS KeyGen data.
+    1. Calculates Shannon Entropy (Information Density).
+    2. Performs Chi-Square Goodness-of-Fit Test (Uniformity).
+    3. Generates the 'Perfect Convergence' Bar Chart.
+    """
+    print(f"--- Loading Data from {csv_file_path} ---")
+    
+    # Load the data (Assuming single column of integers)
+    try:
+        df = pd.read_csv(csv_file_path, header=None)
+        data = df[0].values
+    except Exception as e:
+        print(f"Error loading CSV: {e}")
+        return
 
-plt.figure(figsize=(10, 6))
-bars = plt.bar(categories, values, color=colors, edgecolor='black', linewidth=1.5)
-plt.ylabel('Shannon Entropy (bits)', fontsize=12)
-plt.title('Shannon Entropy of Fertile Constant Distribution', fontsize=14, fontweight='bold')
-plt.ylim(0, 7.5)
-plt.axhline(y=6.58, color='gray', linestyle='--', linewidth=1, label='Maximum entropy')
+    N = len(data)
+    print(f"Sample Size (N): {N:,}")
 
-for bar, val in zip(bars, values):
-    plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.1, 
-             f'{val:.2f}', ha='center', fontsize=12, fontweight='bold')
+    # --- 1. Shannon Entropy Analysis ---
+    # Entropy H = -sum(p_i * log2(p_i))
+    # For maximum entropy, every value should be unique (p_i = 1/N)
+    
+    value_counts = pd.Series(data).value_counts()
+    probs = value_counts / N
+    
+    observed_entropy = -np.sum(probs * np.log2(probs))
+    theoretical_max_entropy = np.log2(N) # Ideal case: log2(Sample_Size)
 
-plt.grid(axis='y', alpha=0.3)
-plt.tight_layout()
-plt.savefig('entropy_comparison_correct.png', dpi=300, bbox_inches='tight')
-plt.show()
+    print(f"\n[Shannon Entropy Results]")
+    print(f"Observed Entropy:   {observed_entropy:.4f} bits")
+    print(f"Theoretical Max:    {theoretical_max_entropy:.4f} bits")
+    
+    convergence_pct = (observed_entropy / theoretical_max_entropy) * 100
+    print(f"Convergence:        {convergence_pct:.6f}%")
+
+    # --- 2. Chi-Square Uniformity Test ---
+    # Based on your table, Critical Limit ~66.34 implies 49 Degrees of Freedom (50 Bins).
+    # We bin the data into 50 equal intervals to check uniformity.
+    
+    num_bins = 50
+    # Create histogram counts
+    observed_counts, _ = np.histogram(data, bins=num_bins)
+    
+    # Expected counts for uniform distribution (N / 50)
+    expected_counts = np.full(num_bins, N / num_bins)
+    
+    chi2_stat, p_value = stats.chisquare(f_obs=observed_counts, f_exp=expected_counts)
+    
+    # Critical Value for alpha=0.05, DF=49
+    critical_value = stats.chi2.ppf(0.95, df=num_bins-1)
+
+    print(f"\n[Chi-Square Test Results]")
+    print(f"Chi-Square Statistic: {chi2_stat:.2f}")
+    print(f"Critical Limit:       {critical_value:.2f}")
+    print(f"Result:               {'PASSED (Uniform)' if chi2_stat < critical_value else 'FAILED'}")
+
+    # --- 3. Visualization (Matching Your Image) ---
+    plt.figure(figsize=(10, 6), facecolor='black')
+    
+    # Bar Chart
+    labels = ['Observed Entropy\n(Experimental)', 'Theoretical Maximum\n(Ideal Randomness)']
+    values = [observed_entropy, theoretical_max_entropy]
+    colors = ['#66c2cd', '#78d25b'] # Teal and Green matching your image
+
+    bars = plt.bar(labels, values, color=colors, width=0.5, edgecolor='white')
+    
+    # Styling
+    plt.ylabel('Entropy (Bits)', color='white', fontsize=12)
+    plt.title(f'Shannon Entropy Analysis of AADS Key Generation\n(Sample Size N = {N:,})', color='white', fontsize=14)
+    plt.yticks(color='white')
+    plt.xticks(color='white', fontsize=11)
+    plt.grid(axis='y', linestyle='--', alpha=0.3)
+    plt.gca().set_facecolor('black')
+
+    # Add Value Labels
+    for bar in bars:
+        height = bar.get_height()
+        plt.text(bar.get_x() + bar.get_width()/2.0, height + 0.5, 
+                 f'{height:.2f} bits', ha='center', va='bottom', color='white', fontsize=12)
+
+    # Add "Perfect Convergence" Arrow/Text
+    if convergence_pct > 99.99:
+        plt.annotate('PERFECT CONVERGENCE\n(0% Information Loss)', 
+                     xy=(0.5, values[0]), xytext=(0.5, values[0]+3),
+                     arrowprops=dict(facecolor='#78d25b', shrink=0.05),
+                     ha='center', color='#78d25b', weight='bold', fontsize=10,
+                     bbox=dict(boxstyle="darrow,pad=0.3", fc="black", ec="#78d25b", lw=2))
+
+    plt.tight_layout()
+    plt.show()
+
+# --- To use this, simply call: ---
+# analyze_aads_randomness('your_data.csv')
